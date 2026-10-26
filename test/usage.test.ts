@@ -93,7 +93,7 @@ test('recovers after malformed and oversized records without exposing private te
   assert.doesNotMatch(JSON.stringify(summary), /secret|private|project|session|call-a/);
 });
 
-test('discovers nested files while ignoring symlinks and non-jsonl files', async t => {
+test('discovers nested files while ignoring symlinks and non-jsonl files', { skip: process.platform === 'win32' }, async t => {
   const dirs = await fixture(t);
   const nested = join(dirs.claudeDir, 'nested'); await mkdir(nested);
   await logs(nested, 'a.jsonl', [call('1')]);
@@ -108,7 +108,7 @@ test('discovers nested files while ignoring symlinks and non-jsonl files', async
   assert.equal(await readFile(join(nested, 'a.jsonl'), 'utf8'), before);
 });
 
-test('rejects explicit missing roots and symlink roots with path-free errors', async t => {
+test('rejects explicit missing roots and symlink roots with path-free errors', { skip: process.platform === 'win32' }, async t => {
   const dirs = await fixture(t);
   await symlink(dirs.claudeDir, join(dirs.root, 'private-link'));
   for (const claudeDir of [join(dirs.root, 'private-missing'), join(dirs.root, 'private-link')]) {
@@ -145,6 +145,9 @@ test('default discovery tolerates a missing assistant root and uses no network',
   });
   const summary = JSON.parse(output);
   assert.equal(summary.totalCalls, 1);
-  assert.equal(summary.hours[10], 1);
-  assert.equal(summary.timezone, 'America/Toronto');
+  // node ignores TZ on windows, so only timezone-independent checks run there.
+  if (process.platform !== 'win32') {
+    assert.equal(summary.hours[10], 1);
+    assert.equal(summary.timezone, 'America/Toronto');
+  }
 });

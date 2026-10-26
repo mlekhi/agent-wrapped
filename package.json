@@ -7,9 +7,18 @@
   "engines": {
     "node": ">=22"
   },
+  "bin": {
+    "agent-wrapped": "dist/src/cli.js"
+  },
+  "files": [
+    "dist/src",
+    "dist/assets",
+    "README.md"
+  ],
   "scripts": {
     "build": "tsc -p tsconfig.json && node scripts/copy-assets.mjs",
-    "test": "npm run build && node --test dist/test/*.test.js"
+    "prepare": "npm run build",
+    "test": "npm run build && node --test \"dist/test/*.test.js\""
   },
   "devDependencies": {
     "@types/node": "22.20.5",
