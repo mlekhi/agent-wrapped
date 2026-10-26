@@ -139,7 +139,7 @@ test('tolerates malformed records without leaking transcript text', async t => {
 
 test('runs the complete cli with networking unavailable', async t => {
   const dirs = await fixture(t);
-  const blocker = fileURLToPath(new URL('./no-network.js', import.meta.url));
+  const blocker = new URL('./no-network.js', import.meta.url).href;
   const env = { ...process.env, HOME: dirs.home, USERPROFILE: dirs.home, TZ: 'America/Toronto' };
   const probe = spawnSync(process.execPath, ['--import', blocker, '--input-type=module', '-e', `
     import net from 'node:net';
