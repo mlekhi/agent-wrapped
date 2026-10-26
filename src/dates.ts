@@ -17,3 +17,6 @@ export function localDay(timestamp: number): string {
   const date = new Date(timestamp);
   return `${String(date.getFullYear()).padStart(4, '0')}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
 }
+
+/** utc ordinals represent local calendar labels, independent of dst day lengths. */
+export const dayOrdinal = (day: string): number => Date.parse(`${day}T00:00:00Z`) / 86_400_000;

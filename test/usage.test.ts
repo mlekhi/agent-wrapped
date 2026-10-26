@@ -151,3 +151,34 @@ test('default discovery tolerates a missing assistant root and uses no network',
     assert.equal(summary.timezone, 'America/Toronto');
   }
 });
+
+test('counts distinct active days and calendar streaks after deduplication and filtering', async t => {
+  const dirs = await fixture(t);
+  const local = (day: string) => new Date(`${day}T12:00:00`).toISOString();
+  const days = ['2026-03-07', '2026-03-08', '2026-03-09', '2026-03-11'];
+  const records = days.map((day, index) => call(`day-${index}`, 'a', { timestamp: local(day) }));
+  await logs(dirs.claudeDir, 'a.jsonl', [...records, records[0]!, call('outside', 'a', { timestamp: local('2026-03-12') })]);
+  await logs(dirs.codexDir, 'a.jsonl', [meta, { ...patch, timestamp: local('2026-03-08') }]);
+  const summary = await collectUsage({ ...dirs, from: '2026-03-07', to: '2026-03-11' });
+  assert.equal(summary.activeDays, 4);
+  assert.equal(summary.longestStreakDays, 3);
+});
+
+test('longest streak uses calendar arithmetic across daylight-saving changes', { skip: process.platform === 'win32' }, async t => {
+  const dirs = await fixture(t);
+  await logs(dirs.claudeDir, 'a.jsonl', [
+    call('1', 'a', { timestamp: '2026-03-07T17:00:00.000Z' }),
+    call('2', 'a', { timestamp: '2026-03-08T16:00:00.000Z' }),
+    call('3', 'a', { timestamp: '2026-03-09T16:00:00.000Z' }),
+    call('4', 'a', { timestamp: '2026-03-11T16:00:00.000Z' }),
+  ]);
+  const script = `import { collectUsage } from ${JSON.stringify(new URL('../src/index.js', import.meta.url).href)};
+    console.log(JSON.stringify(await collectUsage({ source: 'claude', claudeDir: ${JSON.stringify(dirs.claudeDir)},
+      from: '2026-03-07', to: '2026-03-11' })));`;
+  const output = execFileSync(process.execPath, ['--input-type=module', '-e', script], {
+    cwd: resolve('.'), env: { ...process.env, TZ: 'America/Toronto' }, encoding: 'utf8',
+  });
+  const summary = JSON.parse(output);
+  assert.equal(summary.activeDays, 4);
+  assert.equal(summary.longestStreakDays, 3);
+});

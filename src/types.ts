@@ -33,6 +33,8 @@ export interface UsageSummary {
   timezone: string;
   totalCalls: number;
   observedFiles: number;
+  activeDays: number;
+  longestStreakDays: number;
   tools: Record<ToolCategory, number>;
   sources: Record<Source, number>;
   hours: number[];
