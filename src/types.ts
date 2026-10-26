@@ -35,6 +35,7 @@ export interface UsageSummary {
   observedFiles: number;
   activeDays: number;
   longestStreakDays: number;
+  months: { month: string; sources: Record<Source, number> }[];
   tools: Record<ToolCategory, number>;
   sources: Record<Source, number>;
   hours: number[];

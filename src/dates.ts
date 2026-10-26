@@ -20,3 +20,17 @@ export function localDay(timestamp: number): string {
 
 /** utc ordinals represent local calendar labels, independent of dst day lengths. */
 export const dayOrdinal = (day: string): number => Date.parse(`${day}T00:00:00Z`) / 86_400_000;
+
+export function calendarMonths(from: string, to: string): string[] {
+  const result: string[] = [];
+  let year = Number(from.slice(0, 4));
+  let month = Number(from.slice(5, 7));
+  const end = to.slice(0, 7);
+  while (true) {
+    const label = `${String(year).padStart(4, '0')}-${String(month).padStart(2, '0')}`;
+    if (label > end) break;
+    result.push(label);
+    if (++month === 13) { year++; month = 1; }
+  }
+  return result;
+}

@@ -182,3 +182,20 @@ test('longest streak uses calendar arithmetic across daylight-saving changes', {
   assert.equal(summary.activeDays, 4);
   assert.equal(summary.longestStreakDays, 3);
 });
+
+test('aggregates active days, calendar streaks, and monthly agent mix after deduplication', async t => {
+  const dirs = await fixture(t);
+  const local = (day: string) => new Date(`${day}T12:00:00`).toISOString();
+  const days = ['2026-03-07', '2026-03-08', '2026-03-09', '2026-05-01'];
+  const records = days.map((day, i) => call(`day-${i}`, 'a', { timestamp: local(day) }));
+  await logs(dirs.claudeDir, 'a.jsonl', [...records, records[0], call('outside', 'a', { timestamp: local('2026-05-02') })]);
+  await logs(dirs.codexDir, 'a.jsonl', [meta, { ...patch, timestamp: local('2026-03-08') }]);
+  const summary = await collectUsage({ ...dirs, from: '2026-03-07', to: '2026-05-01' });
+  assert.equal(Reflect.get(summary, 'activeDays'), 4);
+  assert.equal(Reflect.get(summary, 'longestStreakDays'), 3);
+  assert.deepEqual(Reflect.get(summary, 'months'), [
+    { month: '2026-03', sources: { claude: 3, codex: 1 } },
+    { month: '2026-04', sources: { claude: 0, codex: 0 } },
+    { month: '2026-05', sources: { claude: 1, codex: 0 } },
+  ]);
+});

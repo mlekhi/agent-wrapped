@@ -32,15 +32,17 @@ test('renders a complete 1200 by 1500 png without embedded text metadata', async
   assert.ok(new Set(pixels).size > 64);
 });
 
-test('shows selected dates, counts, tool rankings, source labels, and local hourly peak', () => {
+test('shows selected dates, counts, personality, and agent shares', () => {
   const summary = posterFixture();
   const svg = renderPosterSvg(summary);
-  for (const label of ['agent', 'wrapped', '2026', 'jan 1', 'dec 31', '386', 'observed files',
-    'claude code', 'codex', '4,200', '3,100', 'america/toronto', '15:00', '16:00']) assert.ok(svg.includes(label), label);
-  assert.ok(svg.indexOf('>read<') < svg.indexOf('>edit<'));
-  assert.equal((svg.match(/data-hour="\d+"/g) ?? []).length, 24);
-  assert.match(svg, /referenced files/);
-  assert.match(svg, /tool calls by local hour/);
+  for (const label of ['agent wrapped', '2026', 'jan 1', 'dec 31', '386', 'observed files', 'tool calls', 'active days',
+    'the streak master', '14 days in a row', 'claude code 67.3%', 'codex 32.7%']) assert.ok(svg.includes(label), label);
+  assert.doesNotMatch(svg, /america\/toronto|unique file references/);
+  assert.ok(svg.indexOf('the streak master') < svg.indexOf('tool calls'));
+  assert.ok(svg.indexOf('tool calls') < svg.indexOf('claude code 67.3%'));
+  assert.ok(svg.indexOf('claude code 67.3%') < svg.indexOf('data-month="2026-01"'));
+  assert.equal((svg.match(/data-month="/g) ?? []).length, 12);
+  assert.doesNotMatch(svg, /your coding personality|your agents|your agent mix|share of monthly tool calls|empty bars/);
 });
 
 test('unknown fields and diagnostics cannot change the shared image', async () => {
@@ -71,39 +73,50 @@ test('rejects injected fields and invalid summaries with a fixed safe error', as
   }
 });
 
-test('single-source sparse activity renders only used categories and wraps midnight', async () => {
+test('single-source sparse activity renders only used agents and a neutral archetype', async () => {
   const summary = posterFixture();
   summary.totalCalls = 1;
   summary.sources = { claude: 0, codex: 1 };
   summary.tools = { read: 0, write: 0, edit: 0, shell: 0, search: 0, web: 0, agent: 0, other: 1 };
   summary.hours = Array<number>(24).fill(0); summary.hours[23] = 1;
   summary.observedFiles = 0;
+  summary.activeDays = 1; summary.longestStreakDays = 1;
+  summary.months = Array.from({ length: 12 }, (_, i) => ({
+    month: `2026-${String(i + 1).padStart(2, '0')}`,
+    sources: i === 0 ? { claude: 0, codex: 1 } : { claude: 0, codex: 0 },
+  }));
   const svg = renderPosterSvg(summary);
   assert.ok(svg.includes('codex'));
   assert.ok(!svg.includes('claude code'));
-  assert.match(svg, /23:00.*00:00/);
-  assert.match(svg, />other</);
-  assert.doesNotMatch(svg, />read</);
+  assert.ok(svg.includes('your time with agents'));
   assert.doesNotMatch(svg, /NaN|Infinity/);
   pngChunks(await renderPoster(summary));
 });
 
-test('ties do not claim a single busiest hour and large counts stay bounded', async () => {
+test('large counts stay bounded and never render nan or infinity', async () => {
   const summary = posterFixture();
-  summary.totalCalls = 24;
-  summary.sources = { claude: 24, codex: 0 };
-  summary.tools = { read: 12, write: 0, edit: 12, shell: 0, search: 0, web: 0, agent: 0, other: 0 };
-  summary.hours = Array<number>(24).fill(1);
-  const svg = renderPosterSvg(summary);
-  assert.match(svg, /all hours tied/);
   summary.totalCalls = 1_000_000_000_000;
-  summary.sources.claude = summary.totalCalls;
-  summary.tools.read = summary.totalCalls; summary.tools.edit = 0;
+  summary.sources = { claude: summary.totalCalls, codex: 0 };
+  summary.tools = { read: summary.totalCalls, write: 0, edit: 0, shell: 0, search: 0, web: 0, agent: 0, other: 0 };
   summary.hours = Array<number>(24).fill(0); summary.hours[0] = summary.totalCalls;
   summary.observedFiles = Number.MAX_SAFE_INTEGER;
+  summary.months[0]!.sources = { claude: summary.totalCalls, codex: 0 };
   const large = renderPosterSvg(summary);
   assert.doesNotMatch(large, /NaN|Infinity/);
   pngChunks(await renderPoster(summary));
+});
+
+test('agent split labels double as the timeline legend without unsupported glyphs', () => {
+  const svg = renderPosterSvg(posterFixture());
+  assert.doesNotMatch(svg, /●/);
+  assert.equal((svg.match(/data-agent="[a-z]+"/g) ?? []).length, 2);
+  assert.equal((svg.match(/data-month="/g) ?? []).length, 12);
+});
+
+test('uses the bundled display font and draws icons for the archetype and stats', () => {
+  const svg = renderPosterSvg(posterFixture());
+  assert.match(svg, /font-family="Space Grotesk"/);
+  assert.equal((svg.match(/data-icon="/g) ?? []).length, 4);
 });
 
 test('renders with bundled assets from another cwd and with networking disabled', () => {
