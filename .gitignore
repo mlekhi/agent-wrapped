@@ -1,0 +1,10 @@
+node_modules/
+dist/
+coverage/
+*.md
+docs/
+.superpowers/
+*.png
+*.jsonl
+.env*
+.DS_Store
