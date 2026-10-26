@@ -136,3 +136,24 @@ test('tolerates malformed records without leaking transcript text', async t => {
   const png = await readFile(join(dirs.root, 'poster.png'));
   assert.ok(!png.includes('private-token'));
 });
+
+test('runs the complete cli with networking unavailable', async t => {
+  const dirs = await fixture(t);
+  const blocker = fileURLToPath(new URL('./no-network.js', import.meta.url));
+  const env = { ...process.env, HOME: dirs.home, USERPROFILE: dirs.home, TZ: 'America/Toronto' };
+  const probe = spawnSync(process.execPath, ['--import', blocker, '--input-type=module', '-e', `
+    import net from 'node:net';
+    const blocked = (label, run) => {
+      try { run(); } catch (error) { if (error.message === 'network unavailable') return; throw error; }
+      throw new Error(label + ' open');
+    };
+    blocked('socket', () => new net.Socket().connect(80, '127.0.0.1'));
+    blocked('fetch', () => { void fetch('https://example.test'); });`], { cwd: dirs.root, encoding: 'utf8', env });
+  assert.equal(probe.status, 0, probe.stderr);
+  await logs(dirs.claudeDir, 'a.jsonl', [call('offline', 'a.ts', { timestamp: new Date(2026, 4, 6, 12).toISOString() })]);
+  const result = spawnSync(process.execPath, ['--import', blocker, cli, '2026', '--source', 'claude',
+    '--claude-dir', dirs.claudeDir, '--save', join(dirs.root, 'offline.png')], { cwd: dirs.root, encoding: 'utf8', env });
+  assert.equal(result.status, 0);
+  assert.equal(result.stderr, '');
+  assert.deepEqual(pngSize(await readFile(join(dirs.root, 'offline.png'))), { width: 1200, height: 1500 });
+});
