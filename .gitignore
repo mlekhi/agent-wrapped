@@ -2,6 +2,7 @@ node_modules/
 dist/
 coverage/
 *.md
+!README.md
 docs/
 .superpowers/
 *.png
