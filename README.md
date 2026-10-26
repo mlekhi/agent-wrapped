@@ -18,13 +18,26 @@ unknown tools and native image generation count as `other`. file counts cover ex
 
 ## commands
 
-currently the parsing api only; the poster and cli are coming next. development requires node 22+:
+parsing and png rendering are available as apis; the cli is coming next. development requires node 22+:
 
 ```sh
 npm ci
 npm test
 npm run build
 ```
+
+render locally after building:
+
+```js
+import { writeFile } from 'node:fs/promises';
+import { collectUsage } from './dist/src/index.js';
+import { renderPoster } from './dist/src/poster.js';
+
+const png = await renderPoster(await collectUsage());
+await writeFile('wrapped.png', png, { flag: 'wx' });
+```
+
+outputs a 1200 × 1500 png with bundled ibm plex sans fonts ([license](assets/fonts/license.txt)). no browser, system fonts, or runtime downloads. large counts use compact notation; tied busiest hours are highlighted together. rendering uses the native `@resvg/resvg-js` package.
 
 planned cli (not available yet):
 
