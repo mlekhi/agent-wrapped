@@ -112,6 +112,12 @@ test('agent split labels double as the timeline legend without unsupported glyph
   assert.equal((svg.match(/data-month="/g) ?? []).length, 12);
 });
 
+test('uses the bundled display font and draws icons for the archetype and stats', () => {
+  const svg = renderPosterSvg(posterFixture());
+  assert.match(svg, /font-family="Space Grotesk"/);
+  assert.equal((svg.match(/data-icon="/g) ?? []).length, 4);
+});
+
 test('renders with bundled assets from another cwd and with networking disabled', () => {
   const moduleUrl = new URL('../src/poster.js', import.meta.url).href;
   const fixtureUrl = new URL('./poster-fixture.js', import.meta.url).href;
