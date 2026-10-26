@@ -18,11 +18,11 @@ function wrappedFixture() {
 test('projects and renders the cross-agent structure', () => {
   const summary = wrappedFixture();
   const svg = renderPosterSvg(summary);
-  for (const label of ['the streak master', '14 days in a row', 'active days', 'your agents', 'your agent mix', 'no activity']) {
+  for (const label of ['the streak master', '14 days in a row', 'active days', 'claude code', 'codex']) {
     assert.ok(svg.includes(label), label);
   }
   assert.ok(svg.indexOf('the streak master') < svg.indexOf('active days'));
-  assert.ok(svg.indexOf('active days') < svg.indexOf('your agents'));
+  assert.ok(svg.indexOf('active days') < svg.indexOf('claude code'));
   assert.equal((svg.match(/data-month=/g) ?? []).length, 12);
   assert.doesNotMatch(svg, /NaN|Infinity/);
 });

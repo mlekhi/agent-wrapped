@@ -15,13 +15,13 @@ function archetype(summary: UsageSummary) {
   if (summary.totalCalls >= 100 && summary.activeDays >= 7) {
     const night = [22, 23, 0, 1, 2, 3, 4].reduce((total, hour) => total + summary.hours[hour]!, 0) / summary.totalCalls;
     const morning = summary.hours.slice(5, 10).reduce((a, b) => a + b, 0) / summary.totalCalls;
-    if (night >= 0.4) return { id: 'night-owl', title: 'the night owl', evidence: `${percent(night)} of your calls happened between 10pm and 5am` };
-    if (morning >= 0.4) return { id: 'early-bird', title: 'the early bird', evidence: `${percent(morning)} of your calls happened between 5am and 10am` };
-    if (summary.longestStreakDays >= 14) return { id: 'streak-master', title: 'the streak master', evidence: `${summary.longestStreakDays} days in a row with coding agents` };
+    if (night >= 0.4) return { id: 'night-owl', title: 'the night owl', evidence: `${percent(night)} of calls after 10pm` };
+    if (morning >= 0.4) return { id: 'early-bird', title: 'the early bird', evidence: `${percent(morning)} of calls before 10am` };
+    if (summary.longestStreakDays >= 14) return { id: 'streak-master', title: 'the streak master', evidence: `${summary.longestStreakDays} days in a row` };
     const regular = categories.filter(key => key !== 'other' && summary.tools[key] / summary.totalCalls >= 0.01).length;
-    if (regular >= 6) return { id: 'tool-master', title: 'the tool master', evidence: `${regular} tool categories used regularly` };
+    if (regular >= 6) return { id: 'tool-master', title: 'the tool master', evidence: `${regular} tool categories used` };
   }
-  return { id: 'neutral', title: 'your time with agents', evidence: `${summary.activeDays} active ${summary.activeDays === 1 ? 'day' : 'days'} with coding agents` };
+  return { id: 'neutral', title: 'your time with agents', evidence: `${summary.activeDays} active ${summary.activeDays === 1 ? 'day' : 'days'}` };
 }
 
 export function formatCount(value: number): string {
@@ -81,6 +81,6 @@ export function posterModel(summary: UsageSummary) {
     period: `${dateLabel(summary.period.from)} — ${dateLabel(summary.period.to)}`,
     timezone, total: formatCount(summary.totalCalls), files: formatCount(summary.observedFiles),
     activeDays: formatCount(summary.activeDays), archetype: archetype(summary), lineup, timeline,
-    timelineNote: summary.months.length > 24 ? `latest 24 months: ${visibleMonths[0]!.month} — ${visibleMonths.at(-1)!.month}` : 'share of monthly tool calls',
+    timelineNote: summary.months.length > 24 ? `latest 24 months: ${visibleMonths[0]!.month} — ${visibleMonths.at(-1)!.month}` : '',
   };
 }

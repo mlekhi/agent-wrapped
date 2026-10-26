@@ -32,17 +32,16 @@ test('renders a complete 1200 by 1500 png without embedded text metadata', async
   assert.ok(new Set(pixels).size > 64);
 });
 
-test('shows selected dates, counts, personality, agent lineup, and agent mix', () => {
+test('shows selected dates, counts, personality, and agent shares', () => {
   const summary = posterFixture();
   const svg = renderPosterSvg(summary);
   for (const label of ['agent wrapped', '2026', 'jan 1', 'dec 31', '386', 'observed files', 'tool calls', 'active days',
-    'the streak master', '14 days in a row', 'your coding personality', 'your agents', 'your agent mix', 'america/toronto']) assert.ok(svg.includes(label), label);
-  assert.ok(svg.indexOf('the streak master') < svg.indexOf('your agents'));
-  assert.ok(svg.indexOf('your agents') < svg.indexOf('your agent mix'));
-  assert.ok(svg.includes('claude code'));
-  assert.ok(svg.includes('codex'));
+    'the streak master', '14 days in a row', 'claude code 67.3%', 'codex 32.7%', 'america/toronto']) assert.ok(svg.includes(label), label);
+  assert.ok(svg.indexOf('the streak master') < svg.indexOf('tool calls'));
+  assert.ok(svg.indexOf('tool calls') < svg.indexOf('claude code 67.3%'));
+  assert.ok(svg.indexOf('claude code 67.3%') < svg.indexOf('data-month="2026-01"'));
   assert.equal((svg.match(/data-month="/g) ?? []).length, 12);
-  assert.doesNotMatch(svg, /NaN|Infinity/);
+  assert.doesNotMatch(svg, /your coding personality|your agents|your agent mix|share of monthly tool calls|empty bars/);
 });
 
 test('unknown fields and diagnostics cannot change the shared image', async () => {
@@ -106,10 +105,11 @@ test('large counts stay bounded and never render nan or infinity', async () => {
   pngChunks(await renderPoster(summary));
 });
 
-test('draws the agent legend as vector markers instead of unsupported glyphs', () => {
+test('agent split labels double as the timeline legend without unsupported glyphs', () => {
   const svg = renderPosterSvg(posterFixture());
   assert.doesNotMatch(svg, /●/);
-  assert.equal((svg.match(/data-legend="[a-z]+"/g) ?? []).length, 2);
+  assert.equal((svg.match(/data-agent="[a-z]+"/g) ?? []).length, 2);
+  assert.equal((svg.match(/data-month="/g) ?? []).length, 12);
 });
 
 test('renders with bundled assets from another cwd and with networking disabled', () => {
