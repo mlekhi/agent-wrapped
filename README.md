@@ -2,7 +2,7 @@
 
 local-only coding agent usage summaries: a personality headline, tool calls, active days, observed files, and how your agent mix changed over time. no model calls, telemetry, or uploads; summaries exclude transcript text and file paths.
 
-![sample agent wrapped poster showing an archetype headline, three stats, an agent share bar, and monthly agent mix](assets/sample-wrapped.png)
+![sample agent wrapped poster showing a large year, an archetype headline, three color-coded stats, and a monthly agent mix](assets/sample-wrapped.png)
 
 the sample above uses synthetic data.
 

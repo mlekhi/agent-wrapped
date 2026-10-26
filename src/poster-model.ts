@@ -79,6 +79,8 @@ export function posterModel(summary: UsageSummary) {
   });
   return {
     period: `${dateLabel(summary.period.from)} — ${dateLabel(summary.period.to)}`,
+    yearLabel: summary.period.from.slice(0, 4) === summary.period.to.slice(0, 4) ? summary.period.from.slice(0, 4) :
+      `${summary.period.from.slice(0, 4)}–${summary.period.to.slice(0, 4)}`,
     timezone, total: formatCount(summary.totalCalls), files: formatCount(summary.observedFiles),
     activeDays: formatCount(summary.activeDays), archetype: archetype(summary), lineup, timeline,
     timelineNote: summary.months.length > 24 ? `latest 24 months: ${visibleMonths[0]!.month} — ${visibleMonths.at(-1)!.month}` : '',

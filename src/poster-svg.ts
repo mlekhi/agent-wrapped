@@ -1,9 +1,12 @@
 import { posterModel } from './poster-model.js';
 import type { UsageSummary } from './types.js';
 
-const color = { ink: '#211638', paper: '#f7f2ff', lavender: '#c2a0ff', coral: '#ff947c', muted: '#b8accb', track: '#3a2a55' };
+const color = {
+  ink: '#171021', cream: '#fff6e9', coral: '#ff7a5c', lime: '#dcf75f', lavender: '#bda4ff',
+  teal: '#6fe7d2', muted: '#b9aed0', track: '#302447',
+};
 const escape = (value: string) => value.replace(/[&<>"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&apos;' })[char]!);
-const text = (x: number, y: number, value: string, size: number, fill = color.paper, weight = 400, extra = '') =>
+const text = (x: number, y: number, value: string, size: number, fill = color.cream, weight = 400, extra = '') =>
   `<text x="${x}" y="${y}" font-size="${size}" font-weight="${weight}" fill="${fill}" ${extra}>${escape(value)}</text>`;
 const icon = (name: string, path: string, x: number, y: number, size: number, stroke: string) =>
   `<g data-icon="${name}" transform="translate(${x} ${y}) scale(${size / 24})" fill="none" stroke="${stroke}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${path}</g>`;
@@ -20,30 +23,33 @@ const statIcons = [
   '<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M8 3v4M16 3v4M3 10h18"/>',
   '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/>',
 ];
+const statColors = [color.lime, color.lavender, color.teal];
 
 /** fixed svg template: no caller-provided markup, fonts, urls, or labels. */
 export function renderPosterSvg(summary: UsageSummary): string {
   const model = posterModel(summary);
+  const yearSize = model.yearLabel.length <= 4 ? 226 : 148;
   const stats = [
     { value: model.total, label: 'tool calls' },
     { value: model.activeDays, label: 'active days' },
     { value: model.files, label: 'observed files' },
   ].map((stat, i) => {
-    const x = 88 + i * 356;
-    return icon(`stat-${i}`, statIcons[i]!, x, 590, 18, color.muted) +
-      text(x, 566, stat.value, Math.min(68, 440 / stat.value.length), i === 0 ? color.coral : color.paper, 700) +
-      text(x + 26, 612, stat.label, 25, color.muted);
+    const x = 64 + i * 364;
+    return `<rect x="${x}" y="640" width="344" height="200" rx="24" fill="${statColors[i]}"/>` +
+      icon(`stat-${i}`, statIcons[i]!, x + 26, 668, 30, color.ink) +
+      text(x + 26, 772, stat.value, Math.min(66, 292 / stat.value.length), color.ink, 700) +
+      text(x + 26, 812, stat.label, 24, color.ink, 400, 'fill-opacity="0.7"');
   }).join('');
   // these labels are also the color key for the monthly bars.
   const legend = model.lineup.map((agent, index) =>
-    text(index === 0 ? 64 : 1136, 722, `${agent.label} ${agent.share}`, 26, agent.color, 700,
+    text(index === 0 ? 64 : 1136, 910, `${agent.label} ${agent.share}`, 26, agent.color, 700,
       `text-anchor="${index === 0 ? 'start' : 'end'}" data-agent="${agent.id}"`)).join('');
   const timeline = model.timeline.map((month, index) => {
     const columns = Math.min(model.timeline.length, 12);
     const columnWidth = 1072 / columns;
-    const barHeight = model.timeline.length > 12 ? 200 : 440;
+    const barHeight = model.timeline.length > 12 ? 140 : 330;
     const x = 64 + (index % 12) * columnWidth;
-    const y = 796 + Math.floor(index / 12) * (barHeight + 57);
+    const y = 950 + Math.floor(index / 12) * (barHeight + 57);
     const width = columnWidth - 12;
     let offset = 0;
     const segments = month.segments.map(segment => {
@@ -61,15 +67,17 @@ export function renderPosterSvg(summary: UsageSummary): string {
   return `<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="1500" viewBox="0 0 1200 1500">
     <rect width="1200" height="1500" fill="${color.ink}"/>
     <g font-family="Space Grotesk">
-      ${text(64, 70, 'agent wrapped', 38, color.lavender, 700)}
-      ${text(64, 114, model.period, 25, color.muted)}
-      <circle cx="104" cy="206" r="40" fill="${color.track}"/>
-      ${icon('archetype', archetypeIcons[model.archetype.id] ?? archetypeIcons.neutral!, 77, 179, 54, color.coral)}
-      ${text(64, 334, model.archetype.title, model.archetype.id === 'neutral' ? 78 : 92, color.paper, 700)}
-      ${text(64, 394, model.archetype.evidence, 28, color.muted)}
-      <rect x="64" y="464" width="1072" height="188" rx="18" fill="${color.track}"/>${stats}
+      ${text(64, 230, model.yearLabel, yearSize, color.cream, 700)}
+      ${text(64, 300, 'agent wrapped', 46, color.lavender, 700)}
+      ${text(64, 348, model.period, 24, color.muted)}
+      <rect x="64" y="380" width="1072" height="220" rx="28" fill="${color.coral}"/>
+      <circle cx="130" cy="490" r="42" fill="${color.ink}"/>
+      ${icon('archetype', archetypeIcons[model.archetype.id] ?? archetypeIcons.neutral!, 103, 463, 54, color.lime)}
+      ${text(204, 500, model.archetype.title, model.archetype.id === 'neutral' ? 68 : 80, color.ink, 700)}
+      ${text(204, 552, model.archetype.evidence, 24, color.ink, 400, 'fill-opacity="0.75"')}
+      ${stats}
+      ${model.timelineNote ? text(1136, 884, model.timelineNote, 18, color.muted, 400, 'text-anchor="end"') : ''}
       ${legend}
-      ${model.timelineNote ? text(1136, 760, model.timelineNote, 21, color.muted, 400, 'text-anchor="end"') : ''}
       ${timeline}
       ${text(64, 1380, model.timezone, 21, color.muted)}
       ${text(64, 1416, 'observed files = unique file references, including attempted operations.', 21, color.muted)}
