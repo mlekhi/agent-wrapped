@@ -1,4 +1,4 @@
-import { formatCount, posterModel } from './poster-model.js';
+import { posterModel } from './poster-model.js';
 import type { UsageSummary } from './types.js';
 
 const color = { ink: '#211638', paper: '#f7f2ff', lavender: '#c2a0ff', coral: '#ff947c', muted: '#b8accb', track: '#3a2a55' };
@@ -9,43 +9,60 @@ const text = (x: number, y: number, value: string, size: number, fill = color.pa
 /** fixed svg template: no caller-provided markup, fonts, urls, or labels. */
 export function renderPosterSvg(summary: UsageSummary): string {
   const model = posterModel(summary);
-  const rows = model.tools.map((tool, index) => {
-    const y = 716 + index * 40;
-    const width = Math.max(2, tool.count / model.tools[0]!.count * 660);
-    return `${text(64, y, tool.label, 25)}
-      <rect x="240" y="${y - 18}" width="660" height="14" rx="7" fill="${color.track}"/>
-      <rect x="240" y="${y - 18}" width="${width}" height="14" rx="7" fill="${index === 0 ? color.coral : color.lavender}"/>
-      ${text(1136, y, formatCount(tool.count), 25, color.paper, 400, 'text-anchor="end"')}`;
+  const stats = [
+    { value: model.total, label: 'tool calls' },
+    { value: model.activeDays, label: 'active days' },
+    { value: model.files, label: 'observed files' },
+  ].map((stat, i) => {
+    const x = 88 + i * 356;
+    return text(x, 559, stat.value, Math.min(68, 440 / stat.value.length), i === 0 ? color.coral : color.paper, 700) + text(x, 605, stat.label, 25, color.muted);
   }).join('');
-  const bars = model.hours.map(({ hour, ratio, peak }) => {
-    const height = ratio * 160;
-    const x = 64 + hour * 45;
-    return `<g data-hour="${hour}"><rect x="${x}" y="${1296 - Math.max(2, height)}" width="29" height="${Math.max(2, height)}" rx="3" fill="${ratio === 0 ? color.track : peak ? color.coral : color.lavender}"/></g>`;
+  const lineup = model.lineup.map((agent, index) => {
+    const y = 754 + index * 97;
+    return `${text(64, y, `0${index + 1}`, 25, color.muted)}
+      ${text(120, y, agent.label, 32, agent.color, 700)}
+      ${text(1136, y, `${agent.count} calls · ${agent.share}`, 27, color.paper, 400, 'text-anchor="end"')}
+      <rect x="120" y="${y + 19}" width="1016" height="12" rx="6" fill="${color.track}"/>
+      <rect x="120" y="${y + 19}" width="${1016 * agent.calls / summary.totalCalls}" height="12" rx="6" fill="${agent.color}"/>`;
   }).join('');
-  const hourLabels = [0, 6, 12, 18, 23].map(hour => text(64 + hour * 45 + 14.5, 1330,
-    String(hour).padStart(2, '0'), 21, color.muted, 400, 'text-anchor="middle"')).join('');
+  const timeline = model.timeline.map((month, index) => {
+    const columns = Math.min(model.timeline.length, 12);
+    const columnWidth = 1072 / columns;
+    const barHeight = model.timeline.length > 12 ? 88 : 220;
+    const x = 64 + (index % 12) * columnWidth;
+    const y = 1025 + Math.floor(index / 12) * (barHeight + 57);
+    const width = columnWidth - 12;
+    let offset = 0;
+    const segments = month.segments.map(segment => {
+      const height = segment.ratio * barHeight;
+      const rect = `<rect x="${x}" y="${y + offset}" width="${width}" height="${height}" fill="${segment.color}"/>`;
+      offset += height;
+      return rect;
+    }).join('');
+    return `<g data-month="${month.month}"><rect x="${x}" y="${y}" width="${width}" height="${barHeight}" fill="${color.track}"/>${segments}
+      ${text(x + width / 2, y + barHeight + 31, month.label, 18, color.muted, 400, 'text-anchor="middle"')}</g>`;
+  }).join('');
+  const legend = model.lineup.map((agent, index) => {
+    const x = 64 + index * 260;
+    return `<g data-legend="${agent.id}"><circle cx="${x + 6}" cy="984" r="7" fill="${agent.color}"/>${text(x + 22, 991, agent.label, 23, color.muted)}</g>`;
+  }).join('');
   return `<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="1500" viewBox="0 0 1200 1500">
     <rect width="1200" height="1500" fill="${color.ink}"/>
     <g font-family="IBM Plex Sans">
-      ${text(64, 66, model.period, 25, color.muted)}
-      ${text(58, 185, 'agent', 144, color.paper, 700)}
-      ${text(58, 316, 'wrapped', 144, color.lavender, 700)}
-      ${text(64, 370, model.sources, 27)}
-      <rect x="64" y="410" width="1072" height="192" rx="18" fill="${color.track}"/>
-      ${text(94, 519, model.total, 92, color.paper, 700)}
-      ${text(94, 564, 'tool calls', 27, color.muted)}
-      ${text(750, 514, model.files, model.files.length > 7 ? 60 : 76, color.coral, 700)}
-      ${text(750, 564, 'observed files', 27, color.muted)}
-      ${text(64, 664, 'your tools', 34, color.paper, 700)}
-      ${text(1136, 664, 'calls', 23, color.muted, 400, 'text-anchor="end"')}
-      ${rows}
-      ${text(64, 1076, 'your busiest hours', 34, color.paper, 700)}
-      ${text(1136, 1076, model.peak, 26, color.coral, 700, 'text-anchor="end"')}
-      ${text(64, 1114, 'tool calls by local hour', 23, color.muted)}
-      ${bars}${hourLabels}
-      ${text(64, 1378, model.timezone, 22, color.muted)}
-      ${text(64, 1435, 'observed files = referenced files, including attempted operations.', 21, color.muted)}
-      ${text(64, 1470, 'made locally. shared by you.', 21, color.muted)}
+      ${text(64, 70, 'agent wrapped', 38, color.lavender, 700)}
+      ${text(64, 114, model.period, 25, color.muted)}
+      ${text(64, 218, 'your coding personality', 24, color.coral)}
+      ${text(58, 323, model.archetype.title, model.archetype.id === 'neutral' ? 85 : 99, color.paper, 700)}
+      ${text(64, 383, model.archetype.evidence, 29, color.muted)}
+      <rect x="64" y="458" width="1072" height="180" rx="18" fill="${color.track}"/>${stats}
+      ${text(64, 699, 'your agents', 34, color.paper, 700)}${lineup}
+      ${text(64, 938, 'your agent mix', 34, color.paper, 700)}
+      ${text(1136, 938, model.timelineNote, 21, color.muted, 400, 'text-anchor="end"')}
+      ${legend}${timeline}
+      ${model.timeline.some(month => month.empty) ? text(64, 1330, 'empty bars = no activity', 21, color.muted) : ''}
+      ${text(64, 1380, model.timezone, 21, color.muted)}
+      ${text(64, 1415, 'observed files = unique file references, including attempted operations.', 21, color.muted)}
+      ${text(64, 1450, 'agent shares reflect tool calls, not time or productivity.', 21, color.muted)}
     </g>
   </svg>`;
 }

@@ -8,6 +8,10 @@ export function posterFixture(): UsageSummary {
   return {
     period: { from: '2026-01-01', to: '2026-12-31' }, timezone: 'America/Toronto',
     totalCalls, observedFiles: 386, activeDays: 30, longestStreakDays: 14,
+    months: Array.from({ length: 12 }, (_, i) => ({
+      month: `2026-${String(i + 1).padStart(2, '0')}`,
+      sources: i === 0 ? { claude: 8200, codex: totalCalls - 8200 } : { claude: 0, codex: 0 },
+    })),
     tools: { read: 4200, edit: 3100, shell: 2200, search: 1200, write: 800, web: 300, agent: 200, other: totalCalls - 12000 },
     sources: { claude: 8200, codex: totalCalls - 8200 }, hours,
     diagnostics: { filesRead: 42, malformedRecords: 0, ignoredRecords: 75, duplicateCalls: 4, oversizedRecords: 0 },

@@ -1,7 +1,7 @@
 import { homedir } from 'node:os';
 import { join, posix, win32 } from 'node:path';
 import { createAdapter } from './adapters.js';
-import { dayOrdinal, isCalendarDay, localDay } from './dates.js';
+import { calendarMonths, dayOrdinal, isCalendarDay, localDay } from './dates.js';
 import { discover, readRecords } from './reader.js';
 import type { Source, ToolEvent, UsageOptions, UsageSummary } from './types.js';
 export type { Source, ToolCategory, UsageOptions, UsageSummary } from './types.js';
@@ -37,13 +37,14 @@ export async function collectUsage(options: UsageOptions = {}): Promise<UsageSum
   const sources: Source[] = options.source && options.source !== 'all' ? [options.source] : ['claude', 'codex'];
   const summary: UsageSummary = {
     period: { from: '', to: '' }, timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-    totalCalls: 0, observedFiles: 0, activeDays: 0, longestStreakDays: 0,
+    totalCalls: 0, observedFiles: 0, activeDays: 0, longestStreakDays: 0, months: [],
     tools: { read: 0, write: 0, edit: 0, shell: 0, search: 0, web: 0, agent: 0, other: 0 },
     sources: { claude: 0, codex: 0 }, hours: Array<number>(24).fill(0),
     diagnostics: { filesRead: 0, malformedRecords: 0, ignoredRecords: 0, duplicateCalls: 0, oversizedRecords: 0 },
   };
-  const seenCalls = new Set<string>();
   const activeDays = new Set<string>();
+  const months = new Map<string, Record<Source, number>>();
+  const seenCalls = new Set<string>();
   const files = new Set<string>();
   let firstDay = '9999-12-31';
   let lastDay = '0000-01-01';
@@ -69,6 +70,10 @@ export async function collectUsage(options: UsageOptions = {}): Promise<UsageSum
             seenCalls.add(identity);
           }
           activeDays.add(day);
+          const month = day.slice(0, 7);
+          const counts = months.get(month) ?? { claude: 0, codex: 0 };
+          counts[source]++;
+          months.set(month, counts);
           summary.totalCalls++;
           summary.sources[source]++;
           summary.tools[event.tool]++;
@@ -93,5 +98,8 @@ export async function collectUsage(options: UsageOptions = {}): Promise<UsageSum
     summary.longestStreakDays = Math.max(summary.longestStreakDays, streak);
     previous = ordinal;
   }
+  summary.months = calendarMonths(summary.period.from, summary.period.to).map(month => ({
+    month, sources: months.get(month) ?? { claude: 0, codex: 0 },
+  }));
   return summary;
 }
