@@ -33,7 +33,7 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm pack --pack-destination dist
-      - run: npm install --prefix dist/package dist/agent-wrapped-*.tgz
+      - run: npm install --prefix dist/package "$GITHUB_WORKSPACE"/dist/agent-wrapped-*.tgz
       - name: run installed cli on synthetic logs
         run: |
           mkdir -p "$RUNNER_TEMP/sessions"
