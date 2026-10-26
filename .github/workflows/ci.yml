@@ -1,0 +1,44 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    name: test (${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm test
+
+  package-smoke:
+    name: package smoke
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm pack --pack-destination dist
+      - run: npm install --prefix dist/package dist/agent-wrapped-*.tgz
+      - name: run installed cli on synthetic logs
+        run: |
+          mkdir -p "$RUNNER_TEMP/sessions"
+          printf '%s\n' '{"type":"assistant","timestamp":"2026-05-06T14:30:00.000Z","sessionId":"s1","cwd":"/project","message":{"content":[{"type":"tool_use","id":"c1","name":"Read","input":{"file_path":"a.ts"}}]}}' > "$RUNNER_TEMP/sessions/s1.jsonl"
+          dist/package/node_modules/.bin/agent-wrapped 2026 --source claude \
+            --claude-dir "$RUNNER_TEMP/sessions" --save "$RUNNER_TEMP/wrapped.png"
+          test -s "$RUNNER_TEMP/wrapped.png"
+          dist/package/node_modules/.bin/agent-wrapped --help

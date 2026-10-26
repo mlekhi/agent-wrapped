@@ -16,30 +16,25 @@ local-only coding agent usage summaries: tool calls, observed files, and busiest
 
 unknown tools and native image generation count as `other`. file counts cover explicit file references and patch headers, including attempted operations. shell commands are never executed or inspected for file effects; nested calls inside code wrappers are not inferred.
 
-## commands
+## install
 
-parsing and png rendering are available as apis; the cli is coming next. development requires node 22+:
+from source (npm publishing is a separate step):
+
+```sh
+npm install git+https://github.com/mlekhi/agent-wrapped.git
+agent-wrapped --source claude --save my-poster.png
+```
+
+local development requires node 22+:
 
 ```sh
 npm ci
 npm test
 npm run build
+node dist/src/cli.js --help
 ```
 
-render locally after building:
-
-```js
-import { writeFile } from 'node:fs/promises';
-import { collectUsage } from './dist/src/index.js';
-import { renderPoster } from './dist/src/poster.js';
-
-const png = await renderPoster(await collectUsage());
-await writeFile('wrapped.png', png, { flag: 'wx' });
-```
-
-outputs a 1200 × 1500 png with bundled ibm plex sans fonts ([license](assets/fonts/license.txt)). no browser, system fonts, or runtime downloads. large counts use compact notation; tied busiest hours are highlighted together. rendering uses the native `@resvg/resvg-js` package.
-
-planned cli (not available yet):
+## usage
 
 ```sh
 agent-wrapped                         # both agents, current year → wrapped.png
@@ -47,3 +42,7 @@ agent-wrapped 2025
 agent-wrapped --source claude
 agent-wrapped --save my-poster.png
 ```
+
+`--source` accepts `all` (default), `claude`, or `codex`. `--from` and `--to` take inclusive `YYYY-MM-DD` dates instead of a year. `--claude-dir` and `--codex-dir` override the default log roots. `--save` defaults to `wrapped.png`; existing files are never overwritten. errors use fixed messages and a nonzero exit, and `--help` lists every option.
+
+outputs a 1200 × 1500 png with bundled ibm plex sans fonts ([license](assets/fonts/license.txt)). no browser, system fonts, runtime downloads, telemetry, or uploads; logs are read locally and never modified, and the image contains only counts and fixed labels. large counts use compact notation; tied busiest hours are highlighted together. rendering uses the native `@resvg/resvg-js` package.
