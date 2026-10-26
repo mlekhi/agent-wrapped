@@ -36,7 +36,8 @@ test('shows selected dates, counts, personality, and agent shares', () => {
   const summary = posterFixture();
   const svg = renderPosterSvg(summary);
   for (const label of ['agent wrapped', '2026', 'jan 1', 'dec 31', '386', 'observed files', 'tool calls', 'active days',
-    'the streak master', '14 days in a row', 'claude code 67.3%', 'codex 32.7%', 'america/toronto']) assert.ok(svg.includes(label), label);
+    'the streak master', '14 days in a row', 'claude code 67.3%', 'codex 32.7%']) assert.ok(svg.includes(label), label);
+  assert.doesNotMatch(svg, /america\/toronto|unique file references/);
   assert.ok(svg.indexOf('the streak master') < svg.indexOf('tool calls'));
   assert.ok(svg.indexOf('tool calls') < svg.indexOf('claude code 67.3%'));
   assert.ok(svg.indexOf('claude code 67.3%') < svg.indexOf('data-month="2026-01"'));

@@ -47,7 +47,7 @@ export function renderPosterSvg(summary: UsageSummary): string {
   const timeline = model.timeline.map((month, index) => {
     const columns = Math.min(model.timeline.length, 12);
     const columnWidth = 1072 / columns;
-    const barHeight = model.timeline.length > 12 ? 140 : 330;
+    const barHeight = model.timeline.length > 12 ? 200 : 420;
     const x = 64 + (index % 12) * columnWidth;
     const y = 950 + Math.floor(index / 12) * (barHeight + 57);
     const width = columnWidth - 12;
@@ -68,8 +68,8 @@ export function renderPosterSvg(summary: UsageSummary): string {
     <rect width="1200" height="1500" fill="${color.ink}"/>
     <g font-family="Space Grotesk">
       ${text(64, 230, model.yearLabel, yearSize, color.cream, 700)}
+      ${text(1136, 66, model.period, 18, color.muted, 400, 'text-anchor="end" fill-opacity="0.65"')}
       ${text(64, 300, 'agent wrapped', 46, color.lavender, 700)}
-      ${text(64, 348, model.period, 24, color.muted)}
       <rect x="64" y="380" width="1072" height="220" rx="28" fill="${color.coral}"/>
       <circle cx="130" cy="490" r="42" fill="${color.ink}"/>
       ${icon('archetype', archetypeIcons[model.archetype.id] ?? archetypeIcons.neutral!, 103, 463, 54, color.lime)}
@@ -79,8 +79,6 @@ export function renderPosterSvg(summary: UsageSummary): string {
       ${model.timelineNote ? text(1136, 884, model.timelineNote, 18, color.muted, 400, 'text-anchor="end"') : ''}
       ${legend}
       ${timeline}
-      ${text(64, 1380, model.timezone, 21, color.muted)}
-      ${text(64, 1416, 'observed files = unique file references, including attempted operations.', 21, color.muted)}
     </g>
   </svg>`;
 }
