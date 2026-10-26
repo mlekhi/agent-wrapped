@@ -6,6 +6,7 @@ coverage/
 docs/
 .superpowers/
 *.png
+!assets/sample-wrapped.png
 *.jsonl
 .env*
 .DS_Store

@@ -1,6 +1,10 @@
 # agent-wrapped
 
-local-only coding agent usage summaries: tool calls, observed files, and busiest hours. no model calls, telemetry, or uploads; summaries exclude transcript text and file paths.
+local-only coding agent usage summaries: a personality headline, tool calls, active days, observed files, and how your agent mix changed over time. no model calls, telemetry, or uploads; summaries exclude transcript text and file paths.
+
+![sample agent wrapped poster showing an archetype headline, three stats, an agent share bar, and monthly agent mix](assets/sample-wrapped.png)
+
+the sample above uses synthetic data.
 
 ## supported sessions
 
@@ -45,4 +49,4 @@ agent-wrapped --save my-poster.png
 
 `--source` accepts `all` (default), `claude`, or `codex`. `--from` and `--to` take inclusive `YYYY-MM-DD` dates instead of a year. `--claude-dir` and `--codex-dir` override the default log roots. `--save` defaults to `wrapped.png`; existing files are never overwritten. errors use fixed messages and a nonzero exit, and `--help` lists every option.
 
-outputs a 1200 × 1500 png with bundled ibm plex sans fonts ([license](assets/fonts/license.txt)). no browser, system fonts, runtime downloads, telemetry, or uploads; logs are read locally and never modified, and the image contains only counts and fixed labels. large counts use compact notation; tied busiest hours are highlighted together. rendering uses the native `@resvg/resvg-js` package.
+outputs a 1200 × 1500 png with bundled ibm plex sans fonts ([license](assets/fonts/license.txt)). no browser, system fonts, runtime downloads, telemetry, or uploads; logs are read locally and never modified, and the image contains only counts and fixed labels. large counts use compact notation. agent shares reflect tool calls, not elapsed time or productivity. rendering uses the native `@resvg/resvg-js` package.
